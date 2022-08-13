@@ -1,21 +1,101 @@
+import Cell from "./cell"
+import { randomInt } from "./helpers"
+import { orientationReadingDirection } from "./orientations"
+
 class TileMap {
     constructor(canvas, options = { size: 10 }) {
         this.canvas = canvas
         const { size } = options
-        this.grid = new Array(size).fill(new Array(size).fill(0))
+        this.grid = new Array(size).fill().map(() => new Array(size).fill(0))
         this.size = size
         this.tileSize = this.canvas.getHeight() / size
 
         this.tileSet = null
 
-        console.log("tileSize", this.tileSize)
+        this.manual = { x: 0, y: 0 }
 
         this.logGrid()
         this.drawGrid()
     }
 
+    setManualStepping() {
+        window.addEventListener("click", (e) => this.manualEntropyResolution())
+    }
+
     setTileSet(tileset) {
         this.tileSet = tileset
+        this.initCells()
+    }
+
+    initCells() {
+        this.forEachGridCell((cell, x, y) => {
+            this.initGridCell(x, y)
+        })
+
+        this.logGrid()
+    }
+
+    getCell(x, y) {
+        return this.grid[y][x]
+    }
+
+    initGridCell(x, y) {
+        this.grid[y][x] = new Cell(x, y, this)
+    }
+
+    manualEntropyResolution() {
+        console.log(this.manual)
+        let cell = this.getCell(this.manual.x, this.manual.y)
+        this.step(cell)
+        this.manual.x += 1
+        if (this.manual.x === this.size) {
+            this.manual.x = 0
+            this.manual.y += 1
+        }
+    }
+
+    randomlyResolveEntropy() {
+        /*const cell = this.grid[1][0] //this.grid[randomInt(0, this.grid.length)][randomInt(0, this.grid[0].length)]
+        cell.randomlyResolveEntropy()
+        this.getCell(1, 1).reduceEntropy()
+        this.getCell(1, 1).randomlyResolveEntropy()
+        this.getCell(1, 2).reduceEntropy()
+        this.getCell(1, 2).randomlyResolveEntropy()*/
+
+        if (this.manual) return
+
+        this.forEachGridCell((cell, x, y) => {
+            this.step(cell)
+        })
+    }
+
+    step(cell) {
+        cell.reduceEntropy()
+        this.drawTileMap()
+        cell.randomlyResolveEntropy()
+        this.drawTileMap()
+    }
+
+    drawTileMap() {
+        this.forEachGridCell((cell, x, y) => {
+            const entropy = cell.possibilities.length
+            if (entropy > 1) {
+                this.canvas.ctx.clearRect(
+                    x * this.tileSize + 1,
+                    y * this.tileSize + 1,
+                    this.tileSize - 2,
+                    this.tileSize - 2
+                )
+                this.canvas.drawText(
+                    cell.possibilities.length,
+                    x * this.tileSize + this.tileSize / 2,
+                    y * this.tileSize + this.tileSize / 2
+                )
+            } else {
+                const tile = cell.possibilities[0]
+                this.drawTile(tile, x, y, false)
+            }
+        })
     }
 
     drawTileSet() {
@@ -23,14 +103,11 @@ class TileMap {
         const tiles = this.tileSet.tiles
         if (!tiles || !tiles.length) throw new Error("Tileset has no tiles")
 
-        this.forEachGridCell((cell, nRow, nCol, index) => {
+        this.forEachGridCell((cell, x, y, index) => {
             const tileIndex = index
             if (tileIndex >= tiles.length) return true
 
             const tile = tiles[tileIndex]
-            const size = this.tileSize
-            const x = nRow * size
-            const y = nCol * size
 
             //if (index !== 16) return
             this.drawTile(tile, x, y, true)
@@ -38,10 +115,18 @@ class TileMap {
     }
 
     drawTile(tile, x, y, showSockets = false) {
-        this.canvas.drawImage(tile.img, x, y, this.tileSize, this.tileSize, tile.rotation, () => {
-            if (!showSockets) return
-            this.drawTileSockets(tile, x, y)
-        })
+        this.canvas.drawImage(
+            tile.img,
+            x * this.tileSize,
+            y * this.tileSize,
+            this.tileSize,
+            this.tileSize,
+            tile.rotation,
+            () => {
+                if (!showSockets) return
+                this.drawTileSockets(tile, x * this.tileSize, y * this.tileSize)
+            }
+        )
     }
 
     drawTileSockets(tile, x, y, fontSize = 16, fontColor = "lightgreen") {
@@ -55,20 +140,13 @@ class TileMap {
             "WEST": { x: spacing / 2, y: this.tileSize - spacing / 2 },
         }
 
-        const orientationDirection = {
-            "NORTH": { x: 1, y: 0 },
-            "EAST": { x: 0, y: 1 },
-            "SOUTH": { x: -1, y: 0 },
-            "WEST": { x: 0, y: -1 },
-        }
-
         Object.entries(tile.sockets).forEach(([orientation, socket], index) => {
             for (let i = 0; i < socket.length; i++) {
                 const socketIndex = i
                 const offset = orientationOffset[orientation]
                 let position = { x: x + offset.x, y: y + offset.y }
-                position.x += socketIndex * orientationDirection[orientation].x * spacing
-                position.y += socketIndex * orientationDirection[orientation].y * spacing
+                position.x += socketIndex * orientationReadingDirection[orientation].x * spacing
+                position.y += socketIndex * orientationReadingDirection[orientation].y * spacing
 
                 const text = socket[socketIndex]
 
@@ -82,7 +160,7 @@ class TileMap {
         let index = 0
         for (let y = 0; y < this.grid.length; y++) {
             if (getOut) break
-            for (let x = 0; x < this.grid[0].length; x++) {
+            for (let x = 0; x < this.grid[y].length; x++) {
                 if (getOut) break
                 getOut = cb(this.grid[y][x], x, y, index)
                 index++

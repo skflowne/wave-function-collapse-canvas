@@ -10,7 +10,9 @@ const tileset = new TileSet("circuit-coding-train", 13)
 await tileset.buildTileSet()
 
 tilemap.setTileSet(tileset)
-tilemap.drawTileSet()
+tilemap.setManualStepping(true)
+tilemap.randomlyResolveEntropy()
+tilemap.logGrid()
 
 /*canvas.drawText("B", 96 - 16, (96 / 3) * 1 - 8, "16px sans-serif")
 canvas.drawText("C", 96 - 16, (96 / 3) * 2 - 8, "16px sans-serif")
