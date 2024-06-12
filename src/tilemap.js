@@ -20,11 +20,10 @@ class TileMap {
 
     drawTileSet() {
         if (!this.tileSet) throw new Error("No tileset was set on the tilemap")
+        const tiles = this.tileSet.tiles
+        if (!tiles || !tiles.length) throw new Error("Tileset has no tiles")
 
         this.forEachGridCell((cell, nRow, nCol, index) => {
-            const tiles = this.tileSet.tiles
-            if (!tiles || !tiles.length) throw new Error("Tileset has no tiles")
-
             const tileIndex = index
             if (tileIndex >= tiles.length) return true
 
