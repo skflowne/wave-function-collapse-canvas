@@ -1,6 +1,6 @@
 {
-  "NORTH": "BBB",
-  "EAST": "BDB",
-  "SOUTH": "BBB",
-  "WEST": "BDB"
+  "NORTH": "EBB",
+  "EAST": "BCB",
+  "SOUTH": "BBE",
+  "WEST": "EEE"
 }

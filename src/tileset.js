@@ -1,6 +1,5 @@
 import Tile from "./tile"
-
-const orientations = ["NORTH", "EAST", "SOUTH", "WEST"]
+import { orientations } from "./orientations"
 
 class TileSet {
     constructor(path, nTiles) {

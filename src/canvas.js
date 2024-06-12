@@ -45,7 +45,6 @@ class Canvas {
     }
 
     drawLine(x0, y0, x1, y1, color = "black", width = 1) {
-        console.log("drawline", x0, y0, x1, y1, color)
         this.ctx.beginPath()
         this.ctx.strokeStyle = color
         this.ctx.lineWidth = width
